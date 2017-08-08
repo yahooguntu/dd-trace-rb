@@ -1,4 +1,5 @@
 module Datadog
+  # rubocop:disable Metrics/ModuleLength
   module Contrib
     module Sequel
       # Patcher enables patching of 'sequel' module.
@@ -35,6 +36,7 @@ module Datadog
           @patched
         end
 
+        # rubocop:disable Metrics/MethodLength
         def patch_sequel_database
           ::Sequel::Database.send(:include, Datadog::Contrib::Sequel::Utils)
           ::Sequel::Database.class_eval do
@@ -50,9 +52,11 @@ module Datadog
             end
 
             alias_method :run_without_datadog, :run
+            remove_method :run
+
             def run(sql, options = ::Sequel::OPTS)
               pin = Datadog::Pin.get_from(self)
-              return run_without_datadog(req, body) unless pin && pin.tracer
+              return run_without_datadog(sql, options) unless pin && pin.tracer
 
               opts = parse_opts(sql, options)
 
@@ -70,7 +74,9 @@ module Datadog
           end
         end
 
+        # rubocop:disable Metrics/AbcSize
         def patch_sequel_dataset
+          # rubocop:disable Metrics/BlockLength
           ::Sequel::Dataset.send(:include, Datadog::Contrib::Sequel::Utils)
           ::Sequel::Dataset.class_eval do
             alias_method :initialize_without_datadog, :initialize
@@ -85,9 +91,11 @@ module Datadog
             end
 
             alias_method :execute_without_datadog, :execute
+            remove_method :execute
+
             def execute(sql, options = ::Sequel::OPTS, &block)
               pin = Datadog::Pin.get_from(self)
-              return execute_without_datadog(req, body, &block) unless pin && pin.tracer
+              return execute_without_datadog(sql, options, &block) unless pin && pin.tracer
 
               opts = parse_opts(sql, options)
               response = nil
@@ -98,6 +106,66 @@ module Datadog
                 span.span_type = Datadog::Ext::SQL::TYPE
                 span.set_tag('sequel.db.vendor', adapter_name)
                 response = execute_without_datadog(sql, options, &block)
+              end
+              response
+            end
+
+            alias_method :execute_ddl_without_datadog, :execute_ddl
+            remove_method :execute_ddl
+
+            def execute_ddl(sql, options = ::Sequel::OPTS, &block)
+              pin = Datadog::Pin.get_from(self)
+              return execute_ddl_without_datadog(sql, options, &block) unless pin && pin.tracer
+
+              opts = parse_opts(sql, options)
+              response = nil
+
+              pin.tracer.trace('sequel.query') do |span|
+                span.service = pin.service
+                span.resource = opts[:query]
+                span.span_type = Datadog::Ext::SQL::TYPE
+                span.set_tag('sequel.db.vendor', adapter_name)
+                response = execute_ddl_without_datadog(sql, options, &block)
+              end
+              response
+            end
+
+            alias_method :execute_dui_without_datadog, :execute_dui
+            remove_method :execute_dui
+
+            def execute_dui(sql, options = ::Sequel::OPTS, &block)
+              pin = Datadog::Pin.get_from(self)
+              return execute_dui_without_datadog(sql, options, &block) unless pin && pin.tracer
+
+              opts = parse_opts(sql, options)
+              response = nil
+
+              pin.tracer.trace('sequel.query') do |span|
+                span.service = pin.service
+                span.resource = opts[:query]
+                span.span_type = Datadog::Ext::SQL::TYPE
+                span.set_tag('sequel.db.vendor', adapter_name)
+                response = execute_dui_without_datadog(sql, options, &block)
+              end
+              response
+            end
+
+            alias_method :execute_insert_without_datadog, :execute_insert
+            remove_method :execute_insert
+
+            def execute_insert(sql, options = ::Sequel::OPTS, &block)
+              pin = Datadog::Pin.get_from(self)
+              return execute_insert_without_datadog(sql, options, &block) unless pin && pin.tracer
+
+              opts = parse_opts(sql, options)
+              response = nil
+
+              pin.tracer.trace('sequel.query') do |span|
+                span.service = pin.service
+                span.resource = opts[:query]
+                span.span_type = Datadog::Ext::SQL::TYPE
+                span.set_tag('sequel.db.vendor', adapter_name)
+                response = execute_insert_without_datadog(sql, options, &block)
               end
               response
             end
