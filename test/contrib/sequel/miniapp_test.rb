@@ -7,7 +7,7 @@ class SequelMiniAppTest < Minitest::Test
     assert_equal('publish', span.name)
     assert_equal('webapp', span.service)
     assert_equal('/index', span.resource)
-    assert_equal(span.trace_id, span.span_id)
+    refute_equal(span.trace_id, span.span_id)
     assert_equal(0, span.parent_id)
   end
 
@@ -51,8 +51,9 @@ class SequelMiniAppTest < Minitest::Test
     assert_equal(3, spans.length)
     process, publish, sequel_cmd = spans
     check_span_publish publish
-    trace_id = publish.span_id
-    check_span_process process, trace_id, trace_id
+    parent_id = publish.span_id
+    trace_id = publish.trace_id
+    check_span_process process, parent_id, trace_id
     parent_id = process.span_id
     check_span_command sequel_cmd, parent_id, trace_id
   end
