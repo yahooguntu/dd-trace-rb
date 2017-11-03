@@ -24,6 +24,7 @@ module Datadog
         @service_buffer = TraceBuffer.new(buff_size)
         @transport = transport
         @shutting_down = false
+        @mutex = Mutex.new
 
         @worker = nil
         @run = false
@@ -67,19 +68,19 @@ module Datadog
         @worker = Thread.new() do
           Datadog::Tracer.log.debug("Starting thread in the process: #{Process.pid}")
 
-          while @run
+          while run
             @back_off = callback_traces ? @flush_interval : [@back_off * BACK_OFF_RATIO, BACK_OFF_MAX].min
 
             callback_services
 
-            sleep(@back_off) if @run
+            sleep(@back_off) if run
           end
         end
       end
 
       # Stop the timer execution. Tasks already in the queue will be executed.
       def stop
-        @run = false
+        @mutex.synchronize { @run = false }
       end
 
       # Closes all available queues and waits for the trace and service buffer to flush
@@ -90,8 +91,8 @@ module Datadog
         @service_buffer.close
         sleep(0.1)
         timeout_time = Time.now + DEFAULT_TIMEOUT
-        while (!@trace_buffer.empty? || !@service_buffer.empty?) && Time.now <= timeout_time
-          sleep(0.05)
+        while (!@trace_buffer.empty? && Time.now <= timeout_time)
+          sleep(0.01)
           Datadog::Tracer.log.debug('Waiting for the buffers to clear before exiting')
         end
         stop
@@ -115,6 +116,12 @@ module Datadog
       def enqueue_service(service)
         return if service == {} # no use to send this, not worth it
         @service_buffer.push(service)
+      end
+
+      private
+
+      def run
+        @mutex.synchronize { @run }
       end
     end
   end
