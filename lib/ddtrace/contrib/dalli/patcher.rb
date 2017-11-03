@@ -10,6 +10,7 @@ module Datadog
       module Patcher
         include Base
         register_as :dalli, auto_patch: true
+        option :service, default: SERVICE
 
         @patched = false
 
@@ -44,6 +45,7 @@ module Datadog
           def add_pin!
             Pin.new(SERVICE, app_type: Ext::AppTypes::DB).tap do |pin|
               pin.onto(::Dalli)
+              pin.service = get_option(:service)
             end
           end
         end
