@@ -61,19 +61,15 @@ module Datadog
         end
       end
 
-      # Start the timer execution.
       def start
         return if @run
         @run = true
         @worker = Thread.new() do
-          Datadog::Tracer.log.debug("Starting thread in the process: #{Process.pid}")
-
-          while run
+          while !@trace_buffer.closed? || !@trace_buffer.empty?
             @back_off = callback_traces ? @flush_interval : [@back_off * BACK_OFF_RATIO, BACK_OFF_MAX].min
 
             callback_services
-
-            sleep(@back_off) if run
+            sleep(@back_off) if !@trace_buffer.closed? && @trace_buffer.empty?
           end
         end
       end
@@ -86,16 +82,8 @@ module Datadog
       # Closes all available queues and waits for the trace and service buffer to flush
       def shutdown!
         return false if @shutting_down
-        @shutting_down = true
         @trace_buffer.close
         @service_buffer.close
-        sleep(0.1)
-        timeout_time = Time.now + DEFAULT_TIMEOUT
-        while (!@trace_buffer.empty? && Time.now <= timeout_time)
-          sleep(0.01)
-          Datadog::Tracer.log.debug('Waiting for the buffers to clear before exiting')
-        end
-        stop
         join
         @shutting_down = false
         true

@@ -73,7 +73,6 @@ module Datadog
       start = Time.now
       return if !@enabled || @writer.worker.nil?
       @writer.worker.shutdown!
-      Datadog::Tracer.log.info("Shutdown took: #{Time.now - start}")
     end
 
     # Return the current active \Context for this traced execution. This method is
