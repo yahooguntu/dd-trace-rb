@@ -40,7 +40,7 @@ module Datadog
 
         def configure
           # ensure that the configuration is executed only once
-          return clean_context if @tracer && @service
+          return if @tracer && @service
 
           # retrieve the current tracer and service
           @tracer = @options.fetch(:tracer)
@@ -132,6 +132,7 @@ module Datadog
           end
 
           request_span.finish()
+          clean_context
 
           [status, headers, response]
         end
