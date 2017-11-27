@@ -6,6 +6,7 @@ module Datadog
       module Patcher
         include Base
         register_as :active_record, auto_patch: false
+        option :service_name
 
         @patched = false
 
@@ -23,6 +24,7 @@ module Datadog
               require 'ddtrace/ext/sql'
               require 'ddtrace/ext/app_types'
 
+              Datadog.configuration[:active_record][:service_name] ||= adapter_name
               patch_active_record()
 
               @patched = true
@@ -59,11 +61,7 @@ module Datadog
         end
 
         def self.database_service
-          @database_service ||= if defined?(::Sinatra)
-                                  datadog_trace.fetch(:default_database_service, adapter_name())
-                                else
-                                  adapter_name()
-                                end
+          @database_service ||= Datadog.configuration[:active_record][:service_name]
           if @database_service
             tracer().set_service_info(@database_service, 'sinatra',
                                       Datadog::Ext::AppTypes::DB)
