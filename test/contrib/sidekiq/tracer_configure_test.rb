@@ -14,16 +14,12 @@ class TracerTest < TracerTestBase
     end
     EmptyWorker.perform_async()
 
-    assert_equal(true, @tracer.enabled)
     assert_equal(
       @writer.services,
       'sidekiq' => {
         'app' => 'sidekiq', 'app_type' => 'worker'
       }
     )
-    assert_equal(false, Datadog::Tracer.debug_logging)
-    assert_equal('localhost', @tracer.writer.transport.hostname)
-    assert_equal('8126', @tracer.writer.transport.port)
   end
 
   def test_configuration_custom
@@ -32,11 +28,7 @@ class TracerTest < TracerTestBase
       chain.add(
         Datadog::Contrib::Sidekiq::Tracer,
         tracer: @tracer,
-        enabled: false,
-        service_name: 'my-sidekiq',
-        debug: true,
-        trace_agent_hostname: 'trace.example.com',
-        trace_agent_port: '7777'
+        service_name: 'my-sidekiq'
       )
     end
     EmptyWorker.perform_async()
@@ -48,8 +40,5 @@ class TracerTest < TracerTestBase
         'app' => 'sidekiq', 'app_type' => 'worker'
       }
     )
-    assert_equal(true, Datadog::Tracer.debug_logging)
-    assert_equal('trace.example.com', @tracer.writer.transport.hostname)
-    assert_equal('7777', @tracer.writer.transport.port)
   end
 end

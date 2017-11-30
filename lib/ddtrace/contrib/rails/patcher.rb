@@ -6,7 +6,6 @@ module Datadog
         include Base
         register_as :rails, auto_patch: true
 
-        option :enabled, default: true
         option :auto_instrument, default: false
         option :auto_instrument_redis, default: false
         option :auto_instrument_grape, default: false
@@ -14,14 +13,8 @@ module Datadog
         option :controller_service, default: 'rails-controller'
         option :cache_service, default: 'rails-cache'
         option :database_service
-        option :distributed_tracing_enabled, default: false
         option :template_base_path, default: 'views/'
         option :tracer, default: Datadog.tracer
-        option :debug, default: false
-        option :trace_agent_hostname, default: Datadog::Writer::HOSTNAME
-        option :trace_agent_port, default: Datadog::Writer::PORT
-        option :env, default: nil
-        option :tags, default: {}
 
         @patched = false
 

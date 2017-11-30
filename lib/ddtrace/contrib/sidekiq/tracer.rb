@@ -22,9 +22,6 @@ module Datadog
         option :enabled, default: true
         option :service_name, default: 'sidekiq'
         option :tracer, default: Datadog.tracer
-        option :debug, default: false
-        option :trace_agent_hostname, default: Writer::HOSTNAME
-        option :trace_agent_port, default: Writer::PORT
 
         def initialize(options = {})
           # check if Rails configuration is available and use it to override
@@ -35,16 +32,6 @@ module Datadog
           user_config = base_config.merge(options)
           @tracer = user_config[:tracer]
           @sidekiq_service = user_config[:service_name]
-
-          # set Tracer status
-          @tracer.enabled = user_config[:enabled]
-          Datadog::Tracer.debug_logging = user_config[:debug]
-
-          # configure the Tracer instance
-          @tracer.configure(
-            hostname: user_config[:trace_agent_hostname],
-            port: user_config[:trace_agent_port]
-          )
         end
 
         def call(worker, job, queue)

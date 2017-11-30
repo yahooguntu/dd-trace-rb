@@ -34,16 +34,6 @@ module Datadog
 
         option :tracer, default: Datadog.tracer
 
-        option(:debug, default: false) { |value| Tracer.debug_logging = value }
-
-        option :trace_agent_hostname, default: Writer::HOSTNAME, depends_on: [:tracer] do |value|
-          get_option(:tracer).configure(hostname: value)
-        end
-
-        option :trace_agent_port, default: Writer::PORT, depends_on: [:tracer] do |value|
-          get_option(:tracer).configure(port: value)
-        end
-
         def route(verb, action, *)
           # Keep track of the route name when the app is instantiated for an
           # incoming request.

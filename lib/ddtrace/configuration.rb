@@ -25,6 +25,15 @@ module Datadog
       integration.patch if integration.respond_to?(:patch)
     end
 
+    def tracer(options = {})
+      instance = options.fetch(:instance, Datadog.tracer)
+
+      instance.configure(options)
+      instance.set_tags(options[:tags])
+      instance.set_tags(env: options[:env]) if options[:env]
+      instance.class.debug_logging = options.fetch(:debug, false)
+    end
+
     private
 
     def fetch_integration(name)
